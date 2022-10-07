@@ -1,9 +1,10 @@
 from typing import Optional
 
-from fastapi import FastAPI, Response, status, HTTPException
+from fastapi import FastAPI, Response, status, Depends
+from sqlalchemy.orm import Session
 
 from SocialAPI import models
-from SocialAPI.db import engine, SessionLocal, get_db
+from SocialAPI.db import engine, get_db
 from SocialAPI.schemas import Post
 
 models.Base.metadata.create_all(bind=engine)
@@ -16,8 +17,9 @@ async def root():
 
 
 @app.get('/posts')
-async def get_posts():
-    return {"data": "These are your posts"}
+async def get_posts(db: Session = Depends(get_db)):
+    posts = db.query(models.Post).all()
+    return {"data": posts}
 
 
 @app.get('/posts/{id}')
@@ -44,6 +46,12 @@ def get_post(id_: int, response: Response):
 @app.delete('/posts/{id}', status_code=status.HTTP_204_NO_CONTENT)
 def delete_post(id_: int):
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@app.get("/sqlalchemy")
+def test_posts(db: Session = Depends(get_db)):
+    posts = db.query(models.Post).all()
+    return {"data": posts}
 
 
 @app.put('posts/{id}')
