@@ -41,11 +41,27 @@ def get_post(id: int, db: Session = Depends(get_db)):
 
 
 @app.delete('/posts/{id}', status_code=status.HTTP_204_NO_CONTENT)
-def delete_post(id_: int):
+def delete_post(id: int, db: Session = Depends(get_db)):
+    post = db.query(models.Post).filter(models.Post.id == id)
+    if not post.first():
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+
+    post.delete(synchronize_session=False)
+    db.commit()
+
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @app.put('posts/{id}')
-def update_post(id: int):
-    return {"data", id}
+def update_post(id: int, post: Post, db: Session = Depends(get_db)):
+    post_query = db.query(models.Post).filter(models.Post.id == id)
+    existing_post = post_query.first()
+
+    if not existing_post:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+
+    post_query.update(**post.dict())
+    db.commit()
+
+    return {"data", post}
 
