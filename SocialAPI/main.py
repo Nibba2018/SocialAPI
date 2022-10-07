@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from SocialAPI import models
 from SocialAPI.db import engine, get_db
-from SocialAPI.schemas import Post
+from SocialAPI.schemas import PostBase, PostCreate
 
 models.Base.metadata.create_all(bind=engine)
 app = FastAPI()
@@ -23,7 +23,7 @@ async def get_posts(db: Session = Depends(get_db)):
 
 
 @app.post('/posts', status_code=status.HTTP_201_CREATED)
-async def create_post(post: Post, db: Session = Depends(get_db)):
+async def create_post(post: PostCreate, db: Session = Depends(get_db)):
     new_post = models.Post(**post.dict())
     db.add(new_post)
     db.commit()
@@ -53,7 +53,7 @@ def delete_post(id: int, db: Session = Depends(get_db)):
 
 
 @app.put('posts/{id}')
-def update_post(id: int, post: Post, db: Session = Depends(get_db)):
+def update_post(id: int, post: PostCreate, db: Session = Depends(get_db)):
     post_query = db.query(models.Post).filter(models.Post.id == id)
     existing_post = post_query.first()
 
