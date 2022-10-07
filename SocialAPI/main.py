@@ -1,6 +1,6 @@
 from typing import Optional
 
-from fastapi import FastAPI, Response, status, Depends
+from fastapi import FastAPI, Response, status, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from SocialAPI import models
@@ -22,25 +22,22 @@ async def get_posts(db: Session = Depends(get_db)):
     return {"data": posts}
 
 
-@app.get('/posts/{id}')
-async def get_post(id_: int):
-    return {'data': "This is your post"}
-
-
 @app.post('/posts', status_code=status.HTTP_201_CREATED)
-async def create_post(post: Post):
-    return {"data": post}
+async def create_post(post: Post, db: Session = Depends(get_db)):
+    new_post = models.Post(**post.dict())
+    db.add(new_post)
+    db.commit()
+    db.refresh(new_post)
+    return {"data": new_post}
 
 
 @app.get('/posts/{id}')
-def get_post(id_: int, response: Response):
-    # Not Found
-    # raise HTTPExecution(status_code=status.HTTP_404_NOT_FOUND,
-    #                     detail='Not found')
-    #
-    # response.status_code = status.HTTP_404_NOT_FOUND
-    # return {"message": 'Not found'}
-    return {"data": id_}
+def get_post(id: int, db: Session = Depends(get_db)):
+    post = db.query(models.Post).filter(models.Post.id == id).first()
+    if not post:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+
+    return {"data": post}
 
 
 @app.delete('/posts/{id}', status_code=status.HTTP_204_NO_CONTENT)
@@ -48,13 +45,7 @@ def delete_post(id_: int):
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-@app.get("/sqlalchemy")
-def test_posts(db: Session = Depends(get_db)):
-    posts = db.query(models.Post).all()
-    return {"data": posts}
-
-
 @app.put('posts/{id}')
-def update_post(id_: int):
-    return {"data", id_}
+def update_post(id: int):
+    return {"data", id}
 
