@@ -1,11 +1,9 @@
-from typing import Optional
-
 from fastapi import FastAPI, Response, status, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from SocialAPI import models
 from SocialAPI.db import engine, get_db
-from SocialAPI.schemas import PostBase, PostCreate
+from SocialAPI.schemas import PostBase, PostCreate, PostResponse
 
 models.Base.metadata.create_all(bind=engine)
 app = FastAPI()
@@ -19,16 +17,16 @@ async def root():
 @app.get('/posts')
 async def get_posts(db: Session = Depends(get_db)):
     posts = db.query(models.Post).all()
-    return {"data": posts}
+    return posts
 
 
-@app.post('/posts', status_code=status.HTTP_201_CREATED)
+@app.post('/posts', status_code=status.HTTP_201_CREATED, response_model=PostResponse)
 async def create_post(post: PostCreate, db: Session = Depends(get_db)):
     new_post = models.Post(**post.dict())
     db.add(new_post)
     db.commit()
     db.refresh(new_post)
-    return {"data": new_post}
+    return new_post
 
 
 @app.get('/posts/{id}')
@@ -37,7 +35,7 @@ def get_post(id: int, db: Session = Depends(get_db)):
     if not post:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
 
-    return {"data": post}
+    return post
 
 
 @app.delete('/posts/{id}', status_code=status.HTTP_204_NO_CONTENT)
@@ -63,5 +61,5 @@ def update_post(id: int, post: PostCreate, db: Session = Depends(get_db)):
     post_query.update(**post.dict(), synchronize_session=False)
     db.commit()
 
-    return {"data", post_query.first()}
+    return post_query.first()
 
