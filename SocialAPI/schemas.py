@@ -13,7 +13,7 @@ class PostCreate(PostBase):
     pass
 
 
-class PostResponse(BaseModel):
+class PostResponse(PostBase):
     id: int
     created_at: datetime
 
